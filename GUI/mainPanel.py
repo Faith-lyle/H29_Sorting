@@ -39,7 +39,7 @@ class MainPanel(Ui_MainWindow, QMainWindow):
         size = self.geometry()
         newLeft = screen.width() - size.width()
         newTop = screen.height() - size.height()
-        self.move(newLeft-20, 0)
+        self.move(newLeft/2, newTop/2)
 
     def ui_init(self):
         self.label.setText(self.config_dict['Title'])
@@ -74,7 +74,8 @@ class MainPanel(Ui_MainWindow, QMainWindow):
 
     def update_SerialNumber_Result(self,data):
         self.lineEdit.setText(data['SerialNumber'])
-        self.label_5.setText(data['TestTime'])
+        self.label_5.setText(data['accelTest'])
+        self.label_4.setText(data['SystemClock'])
         self.label_6.setText(data['Test Pass/Fail Status'])
         if data['Test Pass/Fail Status'] == "PASS":
             self.label_6.setStyleSheet('background-color: lime;')
@@ -82,6 +83,9 @@ class MainPanel(Ui_MainWindow, QMainWindow):
         else:
             self.label_6.setStyleSheet('background-color: rgb(255, 8, 9);')
             self.add_fail_qty(1)
+
+    def write(self, msg):
+        self.textEdit.append(msg)
 
     def closeEvent(self, a0):
         self.close_signal.emit(self.config_dict)

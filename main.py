@@ -7,20 +7,21 @@
 @Date: 2023/4/18-13:57
 @IDE: PyCharm 
 """
-import csv
 import json
 import os
-import re
 import sys
 import time
 import uuid
-
-import requests
-from PyQt5.QtWidgets import QApplication
+from Tool import serialPort
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt
 from GUI.mainPanel import MainPanel
+from Tool.logger import logger, ConsolePanelHandler, set_file_log_path
+from Tool.runThread import RunThread
 
 # 电脑MAC地址
+
+
 mac = uuid.UUID(int=uuid.getnode()).hex[-12:]
 mac = ":".join([mac[e:e + 2] for e in range(0, 11, 2)]).upper()
 
@@ -39,86 +40,47 @@ def sava_json(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
-def write_csv(file_name, result_dict):
-    herder = ['Station ID', 'Product', 'SerialNumber',
-              'Test Pass/Fail Status', 'TestTime', 'List of Failing Tests']
-    if not os.path.exists(file_name):
-        with open(file_name, 'w') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(herder)
-    data = [config['MesConfig']['station_id'], config['MesConfig']['product']]
-    for test_item in herder:
-        if test_item in result_dict.keys():
-            data.append(result_dict[test_item])
-    with open(file_name, 'a') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(data)
-
-
-def get_last_content(file):
-    data = {}
-    with open(file, 'r') as f:
-        while True:
-            try:
-                r_list = [next(f).strip() for _ in range(6)]
-            except StopIteration:
-                res = ''.join(r_list)
-                break
-    r = re.findall('Serial# (.*?) - (.*?)Result - (.*)', res)
-    if r and len(r[0]) == 3:
-        data['SerialNumber'] = r[0][0]
-        data['TestTime'] = r[0][1]
-        if r[0][2].split(':')[0] == 'Pass':
-            data['Test Pass/Fail Status'] = "PASS"
-            data['List of Failing Tests'] = ''
-        else:
-            data['Test Pass/Fail Status'] = "FAIL"
-            data['List of Failing Tests'] = r[0][2].split(':')[1]
-    return data
-
-
-def update_mes(test_data, mes_config):
-    data = {'result': test_data['Test Pass/Fail Status'], 'audio': 0, 'start_time': test_data['TestTime'],
-            'stop_time': test_data['TestTime'], 'sn': test_data['SerialNumber'],
-            'fixture_id': 0, 'test_head_id': 0,
-            'list_of_failing_tests'.upper(): test_data['List of Failing Tests'], 'c': 'ADD_RECORD',
-            'failure_message': test_data['List of Failing Tests'].split(', ')[0],
-            'test_station_name': mes_config['test_station_name'],
-            'station_id': mes_config['station_id'], 'product': mes_config['product'], 'emp_no': '',
-            "type": 1, "HW001": 'OK' if not test_data['List of Failing Tests']else "NG"}
-    for i in range(3):
-        try:
-            response = requests.post(
-                url=mes_config['url'], data=data, timeout=3)
-            if response.status_code == 200:
-                if "SFC_OK" in response.text:
-                    break
-            time.sleep(0.1)
-        except Exception as e:
-            continue
-
-
 def main_close_signal_slot(panel_data):
-    print(panel_data)
     config['panel'] = panel_data
     sava_json(config)
 
 
+is_test = False
+
+
 def main_timer_timeout_slot():
-    last_time = config["panel"]['LastTime']
-    d = get_last_content(config['panel']['logFilePath'])
-    if last_time != d['TestTime']:
-        config["panel"]['LastTime'] = d['TestTime']
-        main.update_SerialNumber_Result(d)
-        write_csv(
-            f"{config['panel']['csvPath']}/{time.strftime('%Y-%m')}.csv", d)
-        if config['MesConfig']['enabled']:
-            update_mes(d, config['MesConfig'])
+    global is_test
+    if term.port.is_open and not is_test:
+        r = term.send_and_read_no_log('a\n', 0.2)
+        if r:
+            is_test = True
+            main.label_6.setText("TESTING")
+            main.label_6.setStyleSheet('background-color:yellow')
+            set_file_log_path('./{}.log'.format(time.strftime("%H-%M-%S")))
+            run_thread.set_args(config,logger,term)
+            run_thread.start()
+
+        else:
+            main.lineEdit.setText("Null")
+            logger.info("Not read production")
 
 
 def main_signal_connect():
     main.close_signal.connect(main_close_signal_slot)
     main.timer.timeout.connect(main_timer_timeout_slot)
+
+
+def thread_signal_connect():
+    run_thread.content_signal.connect(main.write)
+
+
+def open_serial():
+    try:
+        serial_p = serialPort.SerialPort(config['panel']['serial_port'], logger)
+        return serial_p
+    except Exception as e:
+        QMessageBox.critical(None, "Erroe", "Open Serial Port Failed, Error Message:{}".format(e))
+        exit(0)
 
 
 if __name__ == '__main__':
@@ -127,6 +89,11 @@ if __name__ == '__main__':
     main = MainPanel(config['panel'])
     # 设置窗体置顶
     main.setWindowFlag(Qt.WindowStaysOnTopHint)
-    # main_signal_connect()
+    term = open_serial()
+    run_thread = RunThread(parent=main)
+    handler = ConsolePanelHandler(run_thread)
+    logger.addHandler(handler)
+    main_signal_connect()
+    thread_signal_connect()
     main.show()
     sys.exit(app.exec_())
