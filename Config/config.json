@@ -12,10 +12,11 @@
     "panel": {
         "Title": "H29 Sorting Tester",
         "PASSQty": 0,
-        "FAILQty": 0,
+        "FAILQty": 84,
         "csvPath": ".",
-        "updateTime": 5,
-        "serial_port": "/dev/cu.usbserial-14640"
+        "updateTime": 1,
+        "waitTime": 5,
+        "serial_port": "/dev/cu.usbserial-14340"
     },
     "testPlan": [
         {

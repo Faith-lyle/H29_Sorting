@@ -9,6 +9,7 @@
 """
 import json
 import os
+import time
 
 import requests
 
@@ -68,17 +69,31 @@ class Mes:
         :return:
         '''
         result = False
+        send_data = {
+            'c':'ADD_RECORD',
+            'sw_version':'1.0.0.1',
+            'product':self.config['PRODUCT'],
+            'station_id':self.config['STATION_ID'],
+            'test_station_name':self.config['GH_STATION_NAME'],
+            'mac_address':self.config['MAC'],
+            'result':data['Test Pass/Fail Status'],
+            'audio_mode':0,
+            'start_time':data['StartTime'],
+            'stop_time':time.strftime("%Y-%m-%d %H:%M:%S"),
+            'sn':data['SerialNumber'],
+            'fixture_id':data['WorkStationNumber'],
+            'test_head_id':data['SlotNumber'],
+            'list_of_failing_tests':data['List of Failing Tests'],
+            'failure_message':data['List of Failing Tests'].split(';\n')[0]
+        }
         try:
-            for k in self.config.keys():
-                data[k] = self.config[k]
-            data["c"] = "ADD_RECORD"
-            response = requests.post(url=self.url, data=data, timeout=3)
-            self.log.mes_log(func_name='update_test_value_to_mes', url=self.url, data=data, response=response)
+            response = requests.post(url=self.url, data=send_data, timeout=3)
+            self.log.mes_log(func_name='update_test_value_to_mes', url=self.url, data=send_data, response=response)
             if response.status_code == 200:
                 if "SFC_OK" in response.text:
                     result = True
         except Exception as e:
-            self.log.mes_error_log(func_name='update_test_value_to_mes', url=self.url, data=data, error=e)
+            self.log.mes_error_log(func_name='update_test_value_to_mes', url=self.url, data=send_data, error=e)
             result = False
         return result
 

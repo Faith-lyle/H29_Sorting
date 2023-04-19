@@ -73,9 +73,10 @@ class MainPanel(Ui_MainWindow, QMainWindow):
         self.lb_yield.setText("100%")
 
     def update_SerialNumber_Result(self,data):
-        self.lineEdit.setText(data['SerialNumber'])
-        self.label_5.setText(data['accelTest'])
-        self.label_4.setText(data['SystemClock'])
+        print(data)
+        self.lineEdit.setText(data['read_product_mlb'])
+        self.label_5.setText(data['acccel_test'])
+        self.label_4.setText(data['SystemClock_Info_SysClk_80Mhz'])
         self.label_6.setText(data['Test Pass/Fail Status'])
         if data['Test Pass/Fail Status'] == "PASS":
             self.label_6.setStyleSheet('background-color: lime;')

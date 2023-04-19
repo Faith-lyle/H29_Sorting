@@ -43,26 +43,45 @@ def sava_json(data):
 def main_close_signal_slot(panel_data):
     config['panel'] = panel_data
     sava_json(config)
+    run_thread.quit()
 
 
 is_test = False
+wait_time = 0
 
 
 def main_timer_timeout_slot():
-    global is_test
+    global is_test, wait_time
     if term.port.is_open and not is_test:
-        r = term.send_and_read_no_log('a\n', 0.2)
-        if r:
-            is_test = True
-            main.label_6.setText("TESTING")
-            main.label_6.setStyleSheet('background-color:yellow')
-            set_file_log_path('./{}.log'.format(time.strftime("%H-%M-%S")))
-            run_thread.set_args(config,logger,term)
-            run_thread.start()
+        if wait_time == 0:
+            r = term.send_and_read_no_log('a\n', 0.2)
+            main.lineEdit.setText("")
+            main.label_6.setText("")
+            main.label_5.setText("")
+            main.label_4.setText("")
+            # main.lineEdit.setStyleSheet('')
+            if r:
+                is_test = True
+                main.label_6.setText("TESTING")
+                main.label_6.setStyleSheet('background-color:yellow')
+                main.textEdit.clear()
+                user_path = f"{os.path.expanduser('~')}/logs"  # 获取用户路径
+                if not os.path.exists(user_path):
+                    os.mkdir(user_path)
+                dir_path = os.path.join(user_path, time.strftime("%Y-%m-%d"))
+                if not os.path.exists(dir_path):
+                    os.mkdir(dir_path)
+                set_file_log_path('{}/{}.log'.format(dir_path, time.strftime("%H-%M-%S")))
+                run_thread.set_args(config, logger, term)
+                time.sleep(0.5)
+                run_thread.start()
 
+            else:
+                main.label_6.setText("Unconnected Product".upper())
+                main.label_6.setStyleSheet('background-color: rgb(106, 255, 253);color:yellow')
+                logger.info("Not read production")
         else:
-            main.lineEdit.setText("Null")
-            logger.info("Not read production")
+            wait_time -= 1
 
 
 def main_signal_connect():
@@ -72,6 +91,14 @@ def main_signal_connect():
 
 def thread_signal_connect():
     run_thread.content_signal.connect(main.write)
+    run_thread.test_result_signal.connect(response_run_thread_result_signal)
+
+
+def response_run_thread_result_signal(data):
+    global is_test,wait_time
+    main.update_SerialNumber_Result(data)
+    is_test = False
+    wait_time = config['panel']['waitTime']
 
 
 def open_serial():

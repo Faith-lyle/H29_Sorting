@@ -63,6 +63,8 @@ logger = Log().get_log()  # 全局能访问
 
 
 def set_file_log_path(file_path):
+    global log_path
+    log_path = file_path
     for hand in logger.handlers:
         if type(hand) == logging.FileHandler:
             logger.removeHandler(hand)

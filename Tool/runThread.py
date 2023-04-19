@@ -12,6 +12,7 @@ import time, json
 from PyQt5.QtCore import QThread, pyqtSignal
 from Tool.functions import TestFunctions, write_csv
 from Tool.logHelper import LogHelper
+from Tool.logger import log_path
 from Tool.mes import Mes
 
 
@@ -27,8 +28,8 @@ class RunThread(QThread):
     test_result_signal = pyqtSignal(dict)
     content_signal = pyqtSignal(str)
 
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent,*args,**kwargs):
+        super().__init__(parent, *args,**kwargs)
         self.func = None
         self.log = None
         self.config_json = None
@@ -74,7 +75,7 @@ class RunThread(QThread):
         for i, item in enumerate(self.config_json['testPlan']):
             try:
                 result, value = self.func.choose_function(item['testItem'], *item['Input'])
-                self.test_value_signal.emit(i, result, value)
+                # self.test_value_signal.emit(i, result, value)
                 # result_data[item['testItem']] = value
                 if result:
                     if item['testItem'] == 'read_product_mlb':
@@ -104,5 +105,9 @@ class RunThread(QThread):
                 self.log.show_error("Write CSV Error:" + "\nError Message:{}".format(e))
                 time.sleep(0.05)
         self.test_result_signal.emit(result_dict)
-        mes = Mes(self.log)
-        mes.update_test_value_to_mes(result_dict)
+        if result_dict['SerialNumber'] != 'None':
+            os.rename(log_path,'{}/{}.log'.format('/'.join(log_path.split('/')[:-1]),result_dict['SerialNumber']))
+            if self.config_json['MesConfig']['enabled']:
+                mes = Mes(self.log)
+                result_dict['List of Failing Tests'] = ''.join(f'{key}:{value};\n' for key, value in fail_list.items())
+                mes.update_test_value_to_mes(result_dict)

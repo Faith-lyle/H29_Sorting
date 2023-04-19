@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>895</width>
-    <height>550</height>
+    <width>818</width>
+    <height>548</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -70,7 +70,7 @@ font: 75 36pt &quot;Helvetica&quot;;</string>
       <item>
        <widget class="QTabWidget" name="tabWidget">
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -155,6 +155,9 @@ border:0px solid red;
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
                </property>
               </widget>
              </item>
@@ -347,7 +350,7 @@ font: 14pt &quot;Helvetica&quot;;
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>895</width>
+     <width>818</width>
      <height>24</height>
     </rect>
    </property>

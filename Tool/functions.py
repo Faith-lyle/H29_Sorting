@@ -74,6 +74,7 @@ class TestFunctions():
     def __init__(self, log, term=None):
         self.log = log
         self.term = term
+        self.term.set_log_driver(log)
 
     def open_serial_port(self, *args):
         self.log.item_start("Open Serial Port")
@@ -117,7 +118,7 @@ class TestFunctions():
         output = ''
         try:
             for i in range(3):
-                output += self.term.send_and_read_until("syscfg print MLB#\n", timeout=1)
+                output += self.term.send_and_read_until("syscfg print MLB#\n", timeout=0.5)
                 if '> syscfg:ok' in output:
                     flag = re.findall(r'syscfg:ok "(.*)?"', output)
                     if len(flag) == 1:
@@ -139,8 +140,8 @@ class TestFunctions():
         result = False, "FAIL"
         output = ''
         try:
-            for i in range(3):
-                text = self.term.send_and_read_until("accel self test\n", timeout=2)
+            for i in range(1):
+                text = self.term.send_and_read_until("accel self test\n", timeout=0.5)
                 output += text
                 if '> accel:ok' in text:
                     flag = re.findall(r'X:(\-|\+)?(\d*)', text)
@@ -166,8 +167,8 @@ class TestFunctions():
         result = False, "FAIL"
         output = ''
         try:
-            for i in range(3):
-                output += self.term.send_and_read_until("ft measure sysclk\n", timeout=2)
+            for i in range(1):
+                output += self.term.send_and_read_until("ft measure sysclk\n", timeout=0.5)
                 if '> ft:ok' in output:
                     flag = re.findall(r'MHz:(.*)?, Err:', output)
                     if len(flag) == 1:

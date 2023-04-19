@@ -1,5 +1,5 @@
 import datetime
-import logging
+from Tool.logger import logging
 
 
 class LogHelper:
