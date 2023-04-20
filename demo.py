@@ -15,13 +15,23 @@ text ='''
 ]
 ] '''
 
+text1 = '''
+ ft measure sysclk
+> ft:ok Sys Clk Freq - Raw:2432, MHz:79.69, Err:-0.38%'''
+flag = re.findall(r'MHz:(.*)?, Err:', text1)
+print(flag)
+if len(flag) == 1:
+    if 79.2 < float(flag[0]) < 80.8:
+        result = True, flag[0]
 pattern = re.compile(r'X:(\-|\+)?\d*')
 
-print(pattern.search(text))
-a = re.findall(r'X:(\-|\+)?(\d*)',text)
-b = ('/Users/luxshare-ict/logs/2023-04-19.log'.split('/'))
-c = '/'.join(b[:-1])
-print(c)
+flag = re.findall(r'(\-|\+)X:(.*)?Y,', text)
+print(flag)
+if len(flag) == 2:
+    v = (float(flag[0][1]) - float(flag[1][1])) * 0.488 / 1000
+    if 0.8 < v < 5:
+        result = True, v
+
 # print(next(a).group())
 
 

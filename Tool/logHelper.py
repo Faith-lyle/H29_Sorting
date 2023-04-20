@@ -8,8 +8,10 @@ class LogHelper:
         self._log = log
         self.index = 1
         self.startTime = None
+        self.log_path = None
 
     def set_file_log_path(self, file_path):
+        self.log_path = file_path
         for hand in self._log.handlers:
             if type(hand) == logging.FileHandler:
                 self._log.removeHandler(hand)
@@ -19,6 +21,11 @@ class LogHelper:
             'message)s ')
         file_log.setFormatter(formatter)
         self._log.addHandler(file_log)
+
+    def remove_fileHandler(self):
+        for hand in self._log.handlers:
+            if type(hand) == logging.FileHandler:
+                self._log.removeHandler(hand)
 
     def mes_log(self, func_name, url, data, response):
         self._log.info("{}\nFunction:{}\nRequest URL:{}\nRequest Method: POST\nRequest Date:{}\n"

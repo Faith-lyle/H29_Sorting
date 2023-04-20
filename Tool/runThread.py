@@ -12,7 +12,6 @@ import time, json
 from PyQt5.QtCore import QThread, pyqtSignal
 from Tool.functions import TestFunctions, write_csv
 from Tool.logHelper import LogHelper
-from Tool.logger import log_path
 from Tool.mes import Mes
 
 
@@ -27,18 +26,21 @@ def read_station_json():
 class RunThread(QThread):
     test_result_signal = pyqtSignal(dict)
     content_signal = pyqtSignal(str)
+    retest_signal = pyqtSignal()
 
     def __init__(self, parent,*args,**kwargs):
         super().__init__(parent, *args,**kwargs)
+        self.log_path = None
         self.func = None
         self.log = None
         self.config_json = None
 
-    def set_args(self, config=None, log=None, term=None):
+    def set_args(self, config=None, log=None, term=None,log_path = None):
         self.log = LogHelper(log)
         self.config_json = config
         self.func = TestFunctions(self.log, term=term)
         # print(self.log)
+        self.log_path = log_path
 
     def write(self, msg):
         self.content_signal.emit(msg)
@@ -72,6 +74,7 @@ class RunThread(QThread):
         fail_list = {}
         # result_data = {}
         # 测试部分
+        time.sleep(self.config_json["panel"]['waitTime'])
         for i, item in enumerate(self.config_json['testPlan']):
             try:
                 result, value = self.func.choose_function(item['testItem'], *item['Input'])
@@ -81,16 +84,16 @@ class RunThread(QThread):
                     if item['testItem'] == 'read_product_mlb':
                         result_dict['SerialNumber'] = value
                     result_dict[item['testItem']] = value
-                    result_dict['Test Pass/Fail Status'] = 'PASS'
+                    # result_dict['Test Pass/Fail Status'] = 'PASS'
                 else:
-                    result_dict['Test Pass/Fail Status'] = 'FAIL'
+                    # result_dict['Test Pass/Fail Status'] = 'FAIL'
                     result_dict[item['testItem']] = value
                     fail_list[item['testItem']] = 'Upper:NA,Lower:NA,Value:{}'.format(value)
                 time.sleep(0.1)
             except Exception as msg:
                 self.log.show_error("Test Item:" + item['testItem'] + "\nError Message:" + str(msg))
                 result_dict[item['testItem']] = "FAIL"
-                result_dict['Test Pass/Fail Status'] = 'FAIL'
+                # result_dict['Test Pass/Fail Status'] = 'FAIL'
                 continue
         # 测试结束，发送退出信号
         for _ in range(3):
@@ -104,10 +107,19 @@ class RunThread(QThread):
             except Exception as e:
                 self.log.show_error("Write CSV Error:" + "\nError Message:{}".format(e))
                 time.sleep(0.05)
+        result_dict['List of Failing Tests'] = ''.join(f'{key}:{value};\n' for key, value in fail_list.items())
+        result_dict['Test Pass/Fail Status'] = 'PASS' if len(fail_list) == 0 else 'FAIL'
         self.test_result_signal.emit(result_dict)
+        # print(self.log_path)
         if result_dict['SerialNumber'] != 'None':
-            os.rename(log_path,'{}/{}.log'.format('/'.join(log_path.split('/')[:-1]),result_dict['SerialNumber']))
+            os.rename(self.log_path,'{}/{}.log'.format('/'.join(self.log_path.split('/')[:-1]),result_dict['SerialNumber']))
             if self.config_json['MesConfig']['enabled']:
                 mes = Mes(self.log)
-                result_dict['List of Failing Tests'] = ''.join(f'{key}:{value};\n' for key, value in fail_list.items())
                 mes.update_test_value_to_mes(result_dict)
+        self.log.remove_fileHandler()
+        while True:
+            if self.func.check_retest():
+                self.retest_signal.emit()
+                break
+            time.sleep(0.5)
+

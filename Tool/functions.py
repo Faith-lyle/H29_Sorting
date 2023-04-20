@@ -76,6 +76,13 @@ class TestFunctions():
         self.term = term
         self.term.set_log_driver(log)
 
+    def check_retest(self,*args):
+        r = self.term.send_and_read("a\n", 0.5)
+        if r:
+            return False
+        else:
+            return True
+
     def open_serial_port(self, *args):
         self.log.item_start("Open Serial Port")
         result = False, "--FAIL--"
@@ -120,7 +127,7 @@ class TestFunctions():
             for i in range(3):
                 output += self.term.send_and_read_until("syscfg print MLB#\n", timeout=0.5)
                 if '> syscfg:ok' in output:
-                    flag = re.findall(r'syscfg:ok "(.*)?"', output)
+                    flag = re.findall(r'MLB#: "(.*)?"', output)
                     if len(flag) == 1:
                         result = True, flag[0]
                         self.log.set_item_result(flag[0], "PASS")
@@ -146,12 +153,13 @@ class TestFunctions():
                 if '> accel:ok' in text:
                     flag = re.findall(r'X:(\-|\+)?(\d*)', text)
                     if len(flag) == 2:
-                        v = (float(flag[0][1]) - float(flag[1][1])) * 0.488 / 1000
+                        v = (float(f"+{flag[0][1]}") - float(f"-{flag[1][1]}")) * 0.488 / 1000
                         if 0.8 < v < 5:
                             result = True, v
                             self.log.set_item_result(v, "PASS")
                             break
                         else:
+                            result = False, v
                             self.log.set_item_result(v, "FAIL")
                 else:
                     self.term.flush_out()
@@ -172,7 +180,7 @@ class TestFunctions():
                 if '> ft:ok' in output:
                     flag = re.findall(r'MHz:(.*)?, Err:', output)
                     if len(flag) == 1:
-                        if 79.2 < float(flag[0] < 20.8):
+                        if 79.2 < float(flag[0]) < 80.8:
                             result = True, flag[0]
                             self.log.set_item_result(flag[0], "PASS")
                             break

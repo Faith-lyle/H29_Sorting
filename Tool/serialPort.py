@@ -14,7 +14,7 @@ class SerialPort:
 
     def __init__(self, port_name, log_driver):
         self.log_driver = log_driver
-        self.port = serial.Serial(port_name, baudrate=921600, timeout=3)
+        self.port = serial.Serial(port_name, baudrate=230400, timeout=3)
 
     def set_log_driver(self,log):
         self.log_driver = log

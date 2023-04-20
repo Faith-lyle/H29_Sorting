@@ -6,17 +6,17 @@
         "product": "B698",
         "url": "http://10.100.2.69/Bobcat/Sfc_Response.aspx",
         "station_id": "SIP-Measurement201-A5-2F-28HSG-S13-R-3",
-        "mac_address": "14:9D:99:84:2A:A5",
+        "mac_address": "E0:EB:40:EC:31:A4",
         "test_station_name": "SIP Measurement-3-R"
     },
     "panel": {
         "Title": "H29 Sorting Tester",
-        "PASSQty": 0,
-        "FAILQty": 84,
+        "PASSQty": 4,
+        "FAILQty": 125,
         "csvPath": ".",
         "updateTime": 1,
-        "waitTime": 5,
-        "serial_port": "/dev/cu.usbserial-14340"
+        "waitTime": 1,
+        "serial_port": "/dev/cu.usbserial-1410"
     },
     "testPlan": [
         {
